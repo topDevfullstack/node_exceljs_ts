@@ -40,10 +40,10 @@ export class ExcelFileCreator {
 
     // Add rows to the worksheet with correct outline levels
     csvData.forEach((row, index) => {
-      const newRow = worksheet.addRow([row.name]);
+      const newRow = worksheet.addRow([row.name, row.depth]);
 
       // Set the outline level based on depth
-      newRow.outlineLevel = row.depth;
+      newRow.outlineLevel = row.depth - 1;
 
       // Set hidden property based on depth to create collapsible functionality
       if (row.depth > 1) {
@@ -55,15 +55,17 @@ export class ExcelFileCreator {
     });
 
     // Manage visibility based on parent-child relationships
-    parentRows.forEach((parentIndex) => {
-      for (let i = parentIndex.id; i < csvData.length; i++) {
-        if (csvData[i].depth > csvData[parentIndex.id - 1].depth) { // Only look at children
-          worksheet.getRow(i + 1).hidden = true; // Hide initially
-        } else {
-          break; // Exit when reaching a sibling/next parent
-        }
-      }
-    });
+    // parentRows.forEach((parentIndex) => {
+    //   for (let i = parentIndex.id; i < csvData.length; i++) {
+    //     if (csvData[i].depth > csvData[parentIndex.id - 1].depth) { // Only look at children
+    //       worksheet.getRow(i + 1).hidden = true; // Hide initially
+    //       worksheet.getRow(i + 1).outlineLevel = 2;
+    //     } else {
+    //       worksheet.getRow(i + 1).outlineLevel = 1;
+    //       break; // Exit when reaching a sibling/next parent
+    //     }
+    //   }
+    // });
 
     // Save the workbook
     this.workbook!.xlsx.writeFile('myTable.xlsx')
