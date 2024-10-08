@@ -3,8 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExcelFileCreator = void 0;
 const tslib_1 = require("tslib");
 const exceljs_1 = tslib_1.__importDefault(require("exceljs"));
+const logger_1 = require("@overnightjs/logger");
 class ExcelFileCreator {
-    constructor() { }
+    constructor() { logger_1.Logger.Info("erte"); }
     setupWorkbook() {
         this.workbook = new exceljs_1.default.Workbook();
         this.workbook.creator = 'Vrakoss';
@@ -22,16 +23,57 @@ class ExcelFileCreator {
         ];
     }
     fillWorksheet() {
-        const worksheet = this.workbook.getWorksheet('Test numeric values');
-        const column1 = worksheet.getColumn('values1');
-        const column2 = worksheet.getColumn('values2');
-        const column3 = worksheet.getColumn('result');
-        const column1Values = [1, 2, -3, 4, -5, 6];
-        const column2Values = [1, -2, 3, -4, 5, 6];
-        column1.values = column1.values.concat(column1Values);
-        column2.values = column2.values.concat(column2Values);
-        // fill column3 values with the formula
-        column3.values = column3.values.concat(column1Values.map((e, i) => this.getFormulaCellValue(`A${i + 2}`, `B${i + 2}`, column1Values[i] + column2Values[i])));
+        console.log(123);
+        // Sample hierarchical data
+        const worksheet = this.workbook.addWorksheet('Test numeric values');
+        const csvData = [
+            { name: 'Company A', depth: 1 },
+            { name: 'Sub A1', depth: 2 },
+            { name: 'Sub A2', depth: 2 },
+            { name: 'Company B', depth: 1 },
+            { name: 'Sub B1', depth: 2 },
+        ];
+        // To store last outline level for controlling visibility
+        let lastOutlineLevel = 0;
+        // Add rows to the worksheet with correct outline levels
+        csvData.forEach(row => {
+            const newRow = worksheet.addRow(['http:\/\/row.name']);
+            // Set the outline level based on the depth
+            newRow.outlineLevel = row.depth;
+            // Determine if this is a parent row and manage visibility
+            if (row.depth === 1) {
+                newRow.hidden = false; // Parent rows should be visible
+            }
+            else {
+                newRow.hidden = true; // Subrows should be hidden initially
+            }
+            // Maintain the last outline level
+            lastOutlineLevel = row.depth;
+        });
+        // Set row properties for proper collapsible functionality
+        csvData.forEach((row, index) => {
+            if (row.depth === 1) {
+                // For each parent row, ensure it can expand/collapse its children
+                const children = worksheet.getRow(index + 2); // +2: offset for 1-based row index +
+                for (let i = index + 1; i < csvData.length; i++) {
+                    if (csvData[i].depth > row.depth) {
+                        children.hidden = true; // Initially hide children
+                        break;
+                    }
+                    else if (csvData[i].depth <= row.depth) {
+                        break; // Found next sibling, stop checking
+                    }
+                }
+            }
+        });
+        // Save the workbook
+        this.workbook.xlsx.writeFile('myTable.xlsx')
+            .then(() => {
+            console.log('Excel file created!');
+        })
+            .catch(error => {
+            console.error('Error creating Excel file:', error);
+        });
     }
     getFormulaCellValue(cellA, cellB, result) {
         return {
@@ -42,7 +84,7 @@ class ExcelFileCreator {
     }
     getWorkbook() {
         this.setupWorkbook();
-        this.setupWorksheet();
+        // this.setupWorksheet();
         this.fillWorksheet();
         return this.workbook;
     }

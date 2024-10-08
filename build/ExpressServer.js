@@ -31,6 +31,7 @@ class ExpressServer extends core_1.Server {
             res.sendFile('index.html', { root: path_1.default.join(__dirname, '../src/public') });
         });
         this.app.listen(this.PORT, () => {
+            logger_1.Logger.Info('sdfse');
             logger_1.Logger.Imp(this.SERVER_STARTED_MSG);
         });
     }
