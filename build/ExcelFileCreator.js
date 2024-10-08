@@ -27,8 +27,6 @@ class ExcelFileCreator {
             { name: 'Company B', depth: 1 },
             { name: 'Sub B1', depth: 2 },
         ];
-        // To maintain visibility control
-        let parentRows = []; // Specify the type of elements in the array
         // Add rows to the worksheet with correct outline levels
         csvData.forEach((row, index) => {
             const newRow = worksheet.addRow([row.name, row.depth]);
@@ -40,21 +38,8 @@ class ExcelFileCreator {
             }
             else {
                 newRow.hidden = false; // Parent rows should be visible
-                parentRows.push({ id: index + 1, name: row.name }); // Store the index (1-based) of parent rows
             }
         });
-        // Manage visibility based on parent-child relationships
-        // parentRows.forEach((parentIndex) => {
-        //   for (let i = parentIndex.id; i < csvData.length; i++) {
-        //     if (csvData[i].depth > csvData[parentIndex.id - 1].depth) { // Only look at children
-        //       worksheet.getRow(i + 1).hidden = true; // Hide initially
-        //       worksheet.getRow(i + 1).outlineLevel = 2;
-        //     } else {
-        //       worksheet.getRow(i + 1).outlineLevel = 1;
-        //       break; // Exit when reaching a sibling/next parent
-        //     }
-        //   }
-        // });
         // Save the workbook
         this.workbook.xlsx.writeFile('myTable.xlsx')
             .then(() => {
