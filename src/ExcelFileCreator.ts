@@ -1,10 +1,20 @@
-import ExcelJS, { CellFormulaValue, CellValue, Workbook } from "exceljs";
+import ExcelJS, { Workbook } from "exceljs";
 import { Logger } from '@overnightjs/logger';
 
+interface ParentRow {
+  // Define the properties of a parent row here
+  id: number;
+  name: string;
+  // Add other properties as needed
+}
 export class ExcelFileCreator {
   private workbook: ExcelJS.Workbook | undefined;
 
-  constructor() { Logger.Info("erte"); }
+  constructor() {
+    Logger.Info("Creating Excel file instance");
+    this.setupWorkbook();
+    this.fillWorksheet();
+  }
 
   private setupWorkbook() {
     this.workbook = new ExcelJS.Workbook();
@@ -15,18 +25,7 @@ export class ExcelFileCreator {
     this.workbook.lastPrinted = new Date();
   }
 
-  private setupWorksheet() {
-    const worksheet = this.workbook!.addWorksheet('Test numeric values');
-    worksheet.columns = [
-      { header: 'Numeric values', key: 'values1', width: 15 },
-      { header: 'Numeric values', key: 'values2', width: 15 },
-      { header: 'Calculation result', key: 'result', width: 15 },
-    ];
-  }
-
   private fillWorksheet() {
-    console.log(123);
-    // Sample hierarchical data
     const worksheet = this.workbook!.addWorksheet('Test numeric values');
     const csvData = [
       { name: 'Company A', depth: 1 },
@@ -36,39 +35,32 @@ export class ExcelFileCreator {
       { name: 'Sub B1', depth: 2 },
     ];
 
-    // To store last outline level for controlling visibility
-    let lastOutlineLevel = 0;
+    // To maintain visibility control
+    let parentRows: ParentRow[] = []; // Specify the type of elements in the array
 
     // Add rows to the worksheet with correct outline levels
-    csvData.forEach(row => {
-      const newRow = worksheet.addRow(['http:\/\/row.name']);
+    csvData.forEach((row, index) => {
+      const newRow = worksheet.addRow([row.name]);
 
-      // Set the outline level based on the depth
+      // Set the outline level based on depth
       newRow.outlineLevel = row.depth;
 
-      // Determine if this is a parent row and manage visibility
-      if (row.depth === 1) {
-        newRow.hidden = false; // Parent rows should be visible
+      // Set hidden property based on depth to create collapsible functionality
+      if (row.depth > 1) {
+        newRow.hidden = true; // Initially hide sub rows
       } else {
-        newRow.hidden = true; // Subrows should be hidden initially
+        newRow.hidden = false; // Parent rows should be visible
+        parentRows.push({ id: index + 1, name: row.name }); // Store the index (1-based) of parent rows
       }
-
-      // Maintain the last outline level
-      lastOutlineLevel = row.depth;
     });
 
-    // Set row properties for proper collapsible functionality
-    csvData.forEach((row, index) => {
-      if (row.depth === 1) {
-        // For each parent row, ensure it can expand/collapse its children
-        const children = worksheet.getRow(index + 2); // +2: offset for 1-based row index +
-        for (let i = index + 1; i < csvData.length; i++) {
-          if (csvData[i].depth > row.depth) {
-            children.hidden = true; // Initially hide children
-            break;
-          } else if (csvData[i].depth <= row.depth) {
-            break; // Found next sibling, stop checking
-          }
+    // Manage visibility based on parent-child relationships
+    parentRows.forEach((parentIndex) => {
+      for (let i = parentIndex.id; i < csvData.length; i++) {
+        if (csvData[i].depth > csvData[parentIndex.id - 1].depth) { // Only look at children
+          worksheet.getRow(i + 1).hidden = true; // Hide initially
+        } else {
+          break; // Exit when reaching a sibling/next parent
         }
       }
     });
@@ -83,19 +75,7 @@ export class ExcelFileCreator {
       });
   }
 
-  private getFormulaCellValue(cellA: string, cellB: string, result: number): CellValue {
-    return {
-      formula: `=SUM(${cellA},${cellB})`,
-      result: result,
-      date1904: false,
-    };
-  }
-
   public getWorkbook(): Workbook {
-    this.setupWorkbook();
-    // this.setupWorksheet();
-    this.fillWorksheet();
     return this.workbook!;
   }
-
 }
