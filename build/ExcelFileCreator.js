@@ -20,6 +20,26 @@ class ExcelFileCreator {
     }
     fillWorksheet() {
         const worksheet = this.workbook.addWorksheet('Test numeric values');
+        // Set page setup options
+        worksheet.pageSetup = {
+            paperSize: 9, // A4
+            orientation: 'landscape',
+            fitToPage: true,
+            fitToHeight: 1,
+            fitToWidth: 1,
+            margins: {
+                left: 0.5,
+                right: 0.5,
+                top: 0.5,
+                bottom: 0.5,
+                header: 0,
+                footer: 0
+            }
+        };
+        // Set outline settings to have summary rows above detail rows
+        // worksheet.outline = {
+        //   summaryBelow: false, // Set to false for summary rows above detail
+        // };
         const csvData = [
             { name: 'Company A', depth: 1 },
             { name: 'Sub A1', depth: 2 },
